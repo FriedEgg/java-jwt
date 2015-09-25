@@ -1,8 +1,9 @@
 package com.auth0.jwt;
 
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,13 +21,15 @@ import org.apache.commons.codec.binary.Base64;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMReader;
 
 /**
  * JwtSigner implementation based on the Ruby implementation from http://jwt.io
- * No support for RSA encryption at present
+ * No support for SHA512withRSA encryption at present
  */
 public class JWTSigner {
-    private final byte[] secret;
+    private byte[] secret;
 
     public JWTSigner(String secret) {
         this(secret.getBytes());
@@ -34,6 +37,16 @@ public class JWTSigner {
 
     public JWTSigner(byte[] secret) {
         this.secret = secret;
+    }
+
+    private PrivateKey privateKey;
+
+    public JWTSigner(File pemFile) throws IOException {
+        Security.addProvider(new BouncyCastleProvider());
+        FileInputStream pemStream = new FileInputStream(pemFile);
+        PEMReader pemReader = new PEMReader(new InputStreamReader(pemStream));
+        KeyPair keyPair = (KeyPair) pemReader.readObject();
+        this.privateKey = keyPair.getPrivate();
     }
 
     /**
@@ -218,7 +231,7 @@ public class JWTSigner {
     }
 
     /**
-     * Switch the signing algorithm based on input, RSA not supported
+     * Switch the signing algorithm based on input, RS512 not supported
      */
     private static byte[] sign(Algorithm algorithm, String msg, byte[] secret) throws Exception {
         switch (algorithm) {
@@ -234,6 +247,20 @@ public class JWTSigner {
         }
     }
 
+    private static byte[] sign(Algorithm algorithm, String msg, PrivateKey privateKey) throws Exception {
+        switch (algorithm) {
+            case RS256:
+            case RS384:
+                return signWithRSA(algorithm, msg, privateKey);
+            case RS512:
+            case HS256:
+            case HS384:
+            case HS512:
+            default:
+                throw new OperationNotSupportedException("Unsupported signing method");
+        }
+    }
+
     /**
      * Sign an input string using HMAC and return the encrypted bytes
      */
@@ -241,6 +268,13 @@ public class JWTSigner {
         Mac mac = Mac.getInstance(algorithm.getValue());
         mac.init(new SecretKeySpec(secret, algorithm.getValue()));
         return mac.doFinal(msg.getBytes());
+    }
+
+    private static byte[] signWithRSA(Algorithm algorithm, String msg, PrivateKey privateKey) throws GeneralSecurityException {
+        Signature signer = Signature.getInstance(algorithm.getValue());
+        signer.initSign(privateKey);
+        signer.update(msg.getBytes());
+        return signer.sign();
     }
 
     private String join(List<String> input, String on) {

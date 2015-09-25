@@ -56,6 +56,8 @@ public class JWTVerifier {
         algorithms.put("HS256", "HmacSHA256");
         algorithms.put("HS384", "HmacSHA384");
         algorithms.put("HS512", "HmacSHA512");
+        algorithms.put("RS256", "SHA256withRSA");
+        algorithms.put("RS384", "SHA384withRSA");
 
         this.secret = secret;
         this.audience = audience;
