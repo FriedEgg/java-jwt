@@ -38,12 +38,6 @@
     </developer>
   </developers>
 
-  <scm>
-    <url>https://github.com/auth0/java-jwt</url>
-    <developerConnection>scm:git:git@github.com:auth0/java-jwt.git</developerConnection>
-    <connection>scm:git:git@github.com:auth0/java-jwt.git</connection>
-  </scm>
-
   <dependencies>
     <!-- For JWT parsing-->
     <dependency>
@@ -55,12 +49,6 @@
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
       <version>1.4</version>
-    </dependency>
-    <!-- For RSA-->
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-jdk16</artifactId>
-      <version>1.46</version>
     </dependency>
 
     <dependency>
@@ -104,10 +92,6 @@
                   <relocation>
                     <pattern>org.apache.commons.codec</pattern>
                     <shadedPattern>${repackage.base}.org.apache.commons.codec</shadedPattern>
-                  </relocation>
-                  <relocation>
-                    <pattern>org.bouncycastle</pattern>
-                    <shadedPattern>${repackage.base}.org.bouncycastle</shadedPattern>
                   </relocation>
                 </relocations>
               </configuration>

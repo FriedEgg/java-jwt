@@ -21,8 +21,6 @@ import org.apache.commons.codec.binary.Base64;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
 
 /**
  * JwtSigner implementation based on the Ruby implementation from http://jwt.io
@@ -37,14 +35,6 @@ public class JWTSigner {
 
     public JWTSigner(byte[] secret) {
         this.secret = secret;
-    }
-
-    public JWTSigner(File pemFile) throws IOException {
-        Security.addProvider(new BouncyCastleProvider());
-        FileInputStream pemStream = new FileInputStream(pemFile);
-        PEMReader pemReader = new PEMReader(new InputStreamReader(pemStream));
-        KeyPair keyPair = (KeyPair) pemReader.readObject();
-        this.secret = keyPair.getPrivate();
     }
 
     public JWTSigner(PrivateKey privateKey) {
