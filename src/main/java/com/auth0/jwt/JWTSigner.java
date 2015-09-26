@@ -29,7 +29,7 @@ import org.bouncycastle.openssl.PEMReader;
  * No support for SHA512withRSA encryption at present
  */
 public class JWTSigner {
-    private byte[] secret;
+    private Object secret;
 
     public JWTSigner(String secret) {
         this(secret.getBytes());
@@ -39,14 +39,16 @@ public class JWTSigner {
         this.secret = secret;
     }
 
-    private PrivateKey privateKey;
-
     public JWTSigner(File pemFile) throws IOException {
         Security.addProvider(new BouncyCastleProvider());
         FileInputStream pemStream = new FileInputStream(pemFile);
         PEMReader pemReader = new PEMReader(new InputStreamReader(pemStream));
         KeyPair keyPair = (KeyPair) pemReader.readObject();
-        this.privateKey = keyPair.getPrivate();
+        this.secret = keyPair.getPrivate();
+    }
+
+    public JWTSigner(PrivateKey privateKey) {
+        this.secret = privateKey;
     }
 
     /**
@@ -233,31 +235,18 @@ public class JWTSigner {
     /**
      * Switch the signing algorithm based on input, RS512 not supported
      */
-    private static byte[] sign(Algorithm algorithm, String msg, byte[] secret) throws Exception {
+    private static byte[] sign(Algorithm algorithm, String msg, Object secret) throws Exception {
         switch (algorithm) {
         case HS256:
         case HS384:
         case HS512:
-            return signHmac(algorithm, msg, secret);
+            return signHmac(algorithm, msg, (byte[]) secret);
         case RS256:
         case RS384:
+            return signWithRSA(algorithm, msg, (PrivateKey) secret);
         case RS512:
         default:
             throw new OperationNotSupportedException("Unsupported signing method");
-        }
-    }
-
-    private static byte[] sign(Algorithm algorithm, String msg, PrivateKey privateKey) throws Exception {
-        switch (algorithm) {
-            case RS256:
-            case RS384:
-                return signWithRSA(algorithm, msg, privateKey);
-            case RS512:
-            case HS256:
-            case HS384:
-            case HS512:
-            default:
-                throw new OperationNotSupportedException("Unsupported signing method");
         }
     }
 
